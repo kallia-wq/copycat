@@ -1,0 +1,81 @@
+<!-- file: 140.html (clean, fixed) -->
+<!DOCTYPE html>
+<html lang="en" data-page="glitch-140">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GLITCH — 140</title>
+  <link rel="stylesheet" href="assets/css/chaos.css" />
+  <style>
+    :root { --ink:#0ff; --line:#223; }
+    html,body { margin:0; background:#000; color:var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow:hidden; }
+    header,footer { background:#000; color:var(--ink); text-align:center; padding:10px 0; border-bottom:1px solid var(--line); }
+    nav a { margin:0 8px; color:var(--ink); text-decoration:none; opacity:.85; }
+    nav a:hover { opacity:1; text-shadow:0 0 8px var(--ink); }
+    main { position:relative; height:calc(100vh - 120px); display:grid; place-items:stretch; overflow:hidden; }
+    .ansi-wrap { position:relative; overflow:hidden; }
+    .ansi { position:absolute; inset:0; width:100%; height:100%; border:0; background:#000; }
+    .scan { position:absolute; inset:0; background:repeating-linear-gradient(0deg,#0000 0px,#0000 2px,#0003 2px,#0003 3px); mix-blend-mode:overlay; pointer-events:none; }
+    .overlay { position:absolute; inset:0; box-shadow:inset 0 0 120px #000; }
+    .huge { position:absolute; left:50%; top:14px; transform:translateX(-50%); font-weight:700; letter-spacing:.2em; text-shadow:0 0 12px #0ff5; }
+
+    /* XXX popup (why: artful fake; click -> 170.html) */
+    #xxx-popup {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:320px; height:180px; border-radius:12px; display:none; justify-content:center; align-items:center;
+      background:rgba(255,0,0,.10); backdrop-filter:blur(10px); border:2px solid rgba(255,0,0,.30);
+      box-shadow:0 0 25px rgba(255,0,0,.50), inset 0 0 40px rgba(255,0,0,.30); cursor:pointer; z-index:9999;
+      animation:pulse 1.5s infinite;
+    }
+    #xxx-popup span { font:700 4rem/1 'Share Tech Mono', ui-monospace, monospace; color:rgba(255,0,0,.85);
+      letter-spacing:6px; text-shadow:0 0 15px #f00, 0 0 40px #f00; filter:blur(2px); }
+    @keyframes pulse { 0%,100%{transform:translate(-50%,-50%) scale(1); opacity:.9}
+                       50%{transform:translate(-50%,-50%) scale(1.05); opacity:1} }
+    @media (max-width:720px){ .huge{font-size:.9rem; letter-spacing:.1em} }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">COPYCAT™</a>
+    <nav class="site-nav">
+      <a href="index.html">Index</a>
+      <a href="overload.html">Overload</a>
+      <a href="recompile.html">Recompile</a>
+      <a href="remix.html">Remix</a>
+      <a href="corpse.html">Corpse</a>
+      <a href="errors.html">Errors</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="huge glitch" data-text="GLITCH_140.ANSI">GLITCH_140.ANSI</div>
+    <div class="ansi-wrap">
+      <!-- keep the ANSI payload external; works offline without fetch/server -->
+      <iframe class="ansi" src="140.ansi.txt" title="ANSI dump"></iframe>
+      <div class="scan" aria-hidden="true"></div>
+      <div class="overlay" aria-hidden="true"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-header"><span class="mono">Glitch ecology · File 140 · Press XXX to repent</span></div>
+  </footer>
+
+  <div id="xxx-popup" role="dialog" aria-label="popup"><span>XXX</span></div>
+  <script>
+    const POPUP_URL = '170.html';
+    window.addEventListener('load', () => {
+      const pop = document.getElementById('xxx-popup');
+      setTimeout(()=>{ pop.style.display='flex'; }, 2200);
+      pop.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey) window.open(POPUP_URL, '_blank', 'noopener');
+        else window.location.href = POPUP_URL;
+      });
+      setTimeout(()=> pop && pop.remove(), 12000);
+    });
+  </script>
+
+  <script src="assets/js/chaos.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>404 — Last Human Not Found</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="404 — The page you seek has been decompiled into the void." />
+  <link rel="stylesheet" href="assets/css/chaos.css" />
+</head>
+<body>
+  <!-- Dynamic includes keep header/footer consistent across pages -->
+  <div data-include="header"></div>
+
+  <div class="layer scanlines" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+
+  <main class="stack center">
+    <h1 class="huge glitch" data-text="YOU ARE THE LAST HUMAN">YOU ARE THE LAST HUMAN</h1>
+    <p class="muted">Error 404: Transmission lost. This node no longer exists.</p>
+    <a class="btn" href="index.html">respawn</a>
+  </main>
+
+  <div data-include="footer"></div>
+
+  <!-- Load dependencies first; use defer to avoid blocking rendering -->
+  <script defer src="assets/js/notavirus.js"></script>
+  <script defer src="assets/js/chaos.js"></script>
+  <script defer src="assets/js/chat.js"></script>
+  <script defer src="assets/js/includes.js"></script>
+</body>
+</html>

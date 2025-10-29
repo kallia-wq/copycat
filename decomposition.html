@@ -1,0 +1,624 @@
+<!-- FILE: chop_shop.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>decomposition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="assets/css/chaos.css" />
+  <style>
+    .lab { padding: 14px; display: grid; grid-template-columns: 260px 1fr; gap: 14px; }
+    .panel { border:1px solid var(--line); border-radius:12px; background:#050505; padding:10px; }
+    .panel h3 { margin: 6px 0 10px; }
+    .rack { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+    .specimen { position:relative; border:1px dashed var(--line); border-radius:12px; padding:10px; background:#080808; }
+    .specimen header { display:flex; align-items:center; justify-content:space-between; color:#bdf; font-size:.85rem; margin-bottom:8px; }
+    .stage { position:relative; width:100%; aspect-ratio:1/1; background:repeating-linear-gradient(45deg,#060606 0 8px,#080808 8px 16px); overflow:visible; }
+    .stage.drop-target { outline: 2px dashed var(--line); outline-offset: -4px; }
+    .stage.hint { box-shadow: inset 0 0 0 2px rgba(100,150,255,.35); }
+    .slice { position:absolute; will-change:transform; cursor:grab; }
+    .slice:active { cursor:grabbing; }
+    .clipbox { position:absolute; inset:0; overflow:hidden; -webkit-clip-path:polygon(0 0,100% 0,100% 100%,0 100%); clip-path:polygon(0 0,100% 0,100% 100%,0 100%); }
+    .clipbox > img, .clipbox > video { position:absolute; width:100%; height:100%; object-fit:cover; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .controls .btn, .controls input[type="range"] { font-size:.85rem }
+    .badge { border:1px solid var(--line); border-radius:999px; padding:2px 8px; font-size:.72rem; opacity:.8 }
+    .legend { font-size:.8rem; color:#bdf; margin-top:8px; line-height:1.3; }
+    .micro { font-size:.72rem; opacity:.8 }
+    /* Forensics tags */
+    .tag { position:absolute; left:6px; top:6px; background:#0b0b0b; color:#bdf; border:1px solid var(--line); border-radius:8px; padding:4px 6px; font-size:.7rem; pointer-events:none; display:none; }
+    .forensics .tag { display:block; }
+
+    .chop-float{position:fixed; right:18px; bottom:18px; width:min(92vw,520px); height:min(70vh,520px); background:#050505; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 28px rgba(0,0,0,.45); display:grid; grid-template-rows:auto 1fr; z-index:98}
+    .chop-head{display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--line); cursor:move; user-select:none}
+    .chop-body{position:relative; padding:8px}
+    .chop-resize{position:absolute; right:6px; bottom:6px; width:14px; height:14px; border-right:2px solid #333; border-bottom:2px solid #333; cursor:nwse-resize; opacity:.7}
+    #canvasStage{width:100%; height:100%}
+    .chop-hidden{display:none}
+  </style>
+</head>
+<body>
+    <header class="site-header">
+      <a class="brand" href="index.html">COPYCAT™</a>
+      <nav class="site-nav">
+        <a href="origin.html">Origin</a>
+        <a href="rupture.html">Rupture</a>
+        <a href="reanimate.html">Reanimate</a>
+        <a href="mutation.html">Mutation</a>
+        <a href="decomposition.html">Decomposition</a>
+        <a href="corpse.html">Corpse</a>
+        <a href="recompile.html">Recompile</a>
+      </nav>
+    </header>
+<div class="layer scanlines" aria-hidden="true"></div>
+<div class="overlay" aria-hidden="true"></div>
+
+<main class="lab">
+  <aside class="panel">
+    <h3 class="glitch" data-text="MEDIA CHOP SHOP">MEDIA CHOP SHOP</h3>
+    <div class="legend">
+      Drag slices. Double-click to glitch. Long-press to cycle blend modes.  
+      Re-Butcher to re-slice. Auto-scan to discover files. Forensics to label the remains.
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <button id="mergeWorker" class="btn">Merge Composite (Worker)</button>
+      <button id="mergeAll" class="btn">Merge All</button>
+      <button id="scan" class="btn">Auto-scan</button>
+      <button id="reCut" class="btn">Re-Butcher</button>
+      <button id="assemble" class="btn">Assemble</button> <button id="toggleChopBox" class="btn">Chop Box</button>
+      <label class="mono tiny"><input id="auto" type="checkbox"> auto</label>
+      <label class="mono tiny">density <input id="density" type="range" min="3" max="18" step="1" value="8"></label>
+      <label class="mono tiny"><input id="forensics" type="checkbox"> forensics</label>
+    </div>
+    <div class="legend micro">
+      Drop files into <code>assets/media/item/</code>. Supported: <code>.jpg .jpeg .png .gif .mp4 .webm</code>
+      Auto-scan probes <code>1..50</code> names. Manual edit below if you insist.
+    </div>
+    <details style="margin-top:8px" open>
+      <summary class="mono tiny">manifest</summary>
+      <pre id="manifestView" class="deadlog mono" style="max-height:180px; overflow:auto"></pre>
+    </details>
+  </aside>
+
+  <section class="panel">
+    <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="mono tiny">dataset confession: <span class="badge">masking · recomposition · resale</span></div>
+      <div class="mono tiny">mode: <span id="mode" class="badge">butcher</span></div>
+    </header>
+    <div id="rack" class="rack"></div>
+  </section>
+
+  <div id="chopFloat" class="chop-float chop-hidden" role="dialog" aria-label="Chop Box">
+    <div class="chop-head">
+      <strong class="mono">Chop Box</strong>
+      <div class="controls" style="gap:6px">
+        <button id="mergeCanvas" class="btn">Merge Canvas</button>
+        <button id="clearCanvas" class="btn">Clear</button>
+        <button id="closeChop" class="btn">Close</button>
+      </div>
+    </div>
+    <div class="chop-body">
+      <div id="canvasStage" class="stage" aria-label="blank canvas"></div>
+      <div class="chop-resize" id="chopResize" aria-hidden="true"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="site-header">
+    <span class="mono">Severed by intent detection · resale rights uncertain</span>
+  </div>
+</footer>
+
+<script>
+/* ---------- config & state ---------- */
+const EXTS = ["jpg","jpeg","png","gif","mp4","webm"];
+let MANIFEST = [
+  "assets/media/items/10.jpg",
+  "assets/media/items/300.jpg",
+  "assets/media/items/360.jpg",
+  "assets/media/items/340.jpg",
+  "assets/media/items/50.mp4",
+  "assets/media/items/380.mp4"
+];
+const MAX_PROBES = 50;
+const MAX_FOUND = 36;
+
+/* ---------- dom ---------- */
+const rack = document.getElementById('rack');
+const densityInput = document.getElementById('density');
+const reCutBtn = document.getElementById('reCut');
+const assembleBtn = document.getElementById('assemble');
+const autoChk = document.getElementById('auto');
+const modeBadge = document.getElementById('mode');
+const forensicChk = document.getElementById('forensics');
+const scanBtn = document.getElementById('scan');
+const manifestView = document.getElementById('manifestView');
+
+/* ---------- utils ---------- */
+function rand(a,b){ return a + Math.random()*(b-a); }
+function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
+function polygon(n){
+  const pts = [];
+  for(let i=0;i<n;i++){ pts.push([Math.floor(rand(-10,110)), Math.floor(rand(-10,110))]); }
+  return pts.map(p=> p[0]+"% "+p[1]+"%").join(", ");
+}
+function noiseCanvas(){
+  const c = document.createElement('canvas'); c.width=480; c.height=480; const x=c.getContext('2d');
+  const id = x.createImageData(c.width, c.height); const d=id.data;
+  for(let i=0;i<d.length;i+=4){ const n=(Math.random()*255)|0; d[i]=d[i+1]=d[i+2]=n; d[i+3]=255; }
+  x.putImageData(id,0,0); return c;
+}
+
+/* ---------- media loaders (existence probes) ---------- */
+// why: browsers block listing directories; we optimistic-load numbered filenames.
+function probeImage(url, timeout=1400){
+  return new Promise((res)=> {
+    const img = new Image();
+    const t = setTimeout(()=>{ img.src=''; res(null); }, timeout);
+    img.onload = ()=>{ clearTimeout(t); res({url, type:'image', w: img.naturalWidth, h: img.naturalHeight}); };
+    img.onerror = ()=>{ clearTimeout(t); res(null); };
+    img.src = url + '?v=' + Math.random(); // bust cache during dev
+  });
+}
+function probeVideo(url, timeout=1600){
+  return new Promise((res)=> {
+    const v = document.createElement('video');
+    const t = setTimeout(()=>{ cleanup(); res(null); }, timeout);
+    function cleanup(){ try{ v.src=''; v.removeAttribute('src'); v.load(); }catch{} clearTimeout(t); }
+    v.preload = 'metadata'; v.muted = true;
+    v.onloadedmetadata = ()=>{ const out = {url, type:'video', w: v.videoWidth, h: v.videoHeight, dur: v.duration}; cleanup(); res(out); };
+    v.onerror = ()=>{ cleanup(); res(null); };
+    v.src = url + '?v=' + Math.random();
+  });
+}
+async function smartScan(){
+  const found = [];
+  for(let i=1;i<=MAX_PROBES;i++){
+    for(const ext of EXTS){
+      const url = `assets/media/item${i}.${ext}`;
+      let meta = null;
+      if(ext === 'mp4' || ext === 'webm') meta = await probeVideo(url);
+      else meta = await probeImage(url);
+      if(meta){ found.push(meta.url); if(found.length>=MAX_FOUND) return found; }
+    }
+  }
+  return found;
+}
+
+/* ---------- build UI ---------- */
+const BLENDS = ["normal","screen","multiply","overlay","difference","hard-light","color-dodge"];
+const FILTERS = [
+  "none",
+  "hue-rotate(40deg) contrast(1.6) saturate(1.3)",
+  "grayscale(1) contrast(1.8) brightness(1.2)",
+  "invert(1) hue-rotate(180deg)",
+  "sepia(1) saturate(2) hue-rotate(-20deg)",
+  "blur(1px) contrast(1.4)"
+];
+
+function makeMedia(src){
+  const lower = src.toLowerCase();
+  if(lower.endsWith(".mp4") || lower.endsWith(".webm")){
+    const v = document.createElement('video');
+    v.src = src; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+    v.onerror = ()=> v.replaceWith(noiseCanvas());
+    return v;
+  }
+  const img = document.createElement('img');
+  img.src = src;
+  img.onerror = ()=> img.replaceWith(noiseCanvas());
+  return img;
+}
+
+function enableDrag(el){
+  let sx=0, sy=0, ox=0, oy=0, dragging=false;
+  el.addEventListener('pointerdown', e=>{
+    dragging = true; el.setPointerCapture(e.pointerId);
+    let cloning = e.altKey; // hold Alt/Option to clone
+    el.dataset._cloning = cloning ? '1' : '';
+    document.body.classList.add('dragging-slice');
+    const canvasStage = document.getElementById('canvasStage');
+    canvasStage.classList.add('hint');
+
+    sx = e.clientX; sy = e.clientY;
+    const r = el.getBoundingClientRect();
+    const p = el.parentElement.getBoundingClientRect();
+    ox = r.left - p.left; oy = r.top - p.top;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    el.style.transform = `translate(${ox+dx}px, ${oy+dy}px)`;
+    const canvasStage = document.getElementById('canvasStage');
+    const cRect = canvasStage.getBoundingClientRect();
+    const over = e.clientX >= cRect.left && e.clientX <= cRect.right && e.clientY >= cRect.top && e.clientY <= cRect.bottom;
+    canvasStage.classList.toggle('drop-target', over);
+  });
+  el.addEventListener('pointerup', e=>{
+    if(!dragging) return; dragging=false;
+    const canvasStage = document.getElementById('canvasStage');
+    canvasStage.classList.remove('hint');
+    const cRect = canvasStage.getBoundingClientRect();
+    const over = e.clientX >= cRect.left && e.clientX <= cRect.right && e.clientY >= cRect.top && e.clientY <= cRect.bottom;
+    if (over) {
+      // clone or move into canvas
+      const srcSlice = el;
+      const slice = srcSlice.dataset._cloning ? srcSlice.cloneNode(true) : srcSlice;
+      // normalize into pixel positioning inside canvas
+      const localX = e.clientX - cRect.left;
+      const localY = e.clientY - cRect.top;
+      const currentRect = slice.getBoundingClientRect();
+      slice.style.width = currentRect.width + 'px';
+      slice.style.height = currentRect.height + 'px';
+      slice.style.left = localX + 'px';
+      slice.style.top  = localY + 'px';
+      slice.style.transform = 'translate(0,0)';
+      // ensure behaviors stay active on clone
+      const media = slice.querySelector('img,video,canvas');
+      if (media && media.tagName.toLowerCase()==='video') { media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; media.play().catch(()=>{}); }
+      enableDrag(slice);
+      enableGlitch(slice, media);
+      // keep forensics tag
+      canvasStage.appendChild(slice);
+      // if we moved the original, ensure it's removed from its old parent
+      if (!srcSlice.dataset._cloning && srcSlice !== slice) { try { srcSlice.remove(); } catch{} }
+    }
+    document.body.classList.remove('dragging-slice');
+    const st = document.getElementById('canvasStage'); st.classList.remove('drop-target');
+  });
+  el.addEventListener('pointercancel', ()=>{
+    dragging = false;
+    document.body.classList.remove('dragging-slice');
+    const st = document.getElementById('canvasStage');
+    st.classList.remove('hint', 'drop-target');
+  });
+}
+
+function enableGlitch(slice, media){
+  slice.addEventListener('dblclick', ()=>{
+    let i = parseInt(slice.dataset.filterIndex||"0",10);
+    i = (i+1) % FILTERS.length;
+    slice.dataset.filterIndex = String(i);
+    media.style.filter = FILTERS[i];
+  });
+  let pressTimer = null;
+  slice.addEventListener('pointerdown', ()=>{ pressTimer = setTimeout(()=>{
+    const m = getComputedStyle(slice).mixBlendMode;
+    const idx = BLENDS.indexOf(m);
+    slice.style.mixBlendMode = BLENDS[(idx+1) % BLENDS.length];
+  }, 400); });
+  slice.addEventListener('pointerup', ()=> clearTimeout(pressTimer));
+  slice.addEventListener('pointerleave', ()=> clearTimeout(pressTimer));
+}
+
+function addForensics(slice, media, idx, src, poly){
+  const tag = document.createElement('div');
+  tag.className = 'tag mono tiny';
+  const type = (media.tagName.toLowerCase()==='video') ? 'video' : 'image';
+  function update(){
+    let w=0,h=0,d='—';
+    if(type==='video'){ w = media.videoWidth||0; h = media.videoHeight||0; d = isFinite(media.duration)? media.duration.toFixed(2)+'s':'—'; }
+    else { w = media.naturalWidth||0; h = media.naturalHeight||0; }
+    tag.textContent = `#${idx} · ${type} · ${w}×${h}${type==='video'?' · '+d:''} · mask[${poly.length}] · ${src.split('/').pop()}`;
+  }
+  // best-effort metadata fill
+  media.addEventListener('loadedmetadata', update);
+  media.addEventListener('loadeddata', update);
+  media.addEventListener('load', update);
+  // initial
+  setTimeout(update, 300);
+  slice.appendChild(tag);
+}
+
+function buildSpecimen(src){
+  const specimen = document.createElement('article');
+  specimen.className = 'specimen';
+  specimen.innerHTML = `
+    <header>
+      <span class="mono tiny">${src.split('/').pop()}</span>
+      <span class="badge mono tiny">slices: <b class="scount">0</b></span>
+    </header>
+    <div class="stage"></div>
+  `;
+  const stage = specimen.querySelector('.stage');
+  const count = parseInt(densityInput.value,10);
+
+  for(let i=0;i<count;i++){
+    const slice = document.createElement('div');
+    slice.className = 'slice';
+    slice.style.left = rand(-6, 60) + '%';
+    slice.style.top  = rand(-6, 60) + '%';
+    slice.style.width = rand(38, 70) + '%';
+    slice.style.height = rand(28, 60) + '%';
+    slice.style.mixBlendMode = pick(BLENDS);
+    slice.dataset.filterIndex = "0";
+
+    const clip = document.createElement('div');
+    clip.className = 'clipbox';
+    const verts = 5 + (Math.random()*3|0);
+    const polyPts = polygon(verts);
+    clip.style.clipPath = `polygon(${polyPts})`;
+    clip.style.webkitClipPath = `polygon(${polyPts})`;
+
+    const media = makeMedia(src);
+    media.style.left = rand(-30, 0) + '%';
+    media.style.top  = rand(-30, 0) + '%';
+    media.style.filter = FILTERS[0];
+
+    clip.appendChild(media);
+    slice.appendChild(clip);
+    enableDrag(slice);
+    enableGlitch(slice, media);
+    addForensics(slice, media, i+1, src, polyPts.split(','));
+    stage.appendChild(slice);
+  }
+  specimen.querySelector('.scount').textContent = count;
+  return specimen;
+}
+
+/* ---------- flows ---------- */
+function renderManifest(){
+  manifestView.textContent = JSON.stringify(MANIFEST, null, 2);
+}
+function rebuild(){
+  rack.classList.toggle('forensics', forensicChk.checked);
+  rack.innerHTML = '';
+  MANIFEST.forEach(src => rack.appendChild(buildSpecimen(src)));
+  modeBadge.textContent = 'butcher';
+}
+function assemble(){
+  document.querySelectorAll('.specimen .slice').forEach((sl,i)=>{
+    sl.style.transition = 'transform .6s cubic-bezier(.2,.8,.2,1), left .6s, top .6s';
+    sl.style.transform = 'translate(0,0)';
+    sl.style.left = (i%3)*30 + 2 + '%';
+    sl.style.top  = Math.floor(i/3)*26 + 2 + '%';
+    setTimeout(()=> sl.style.transition = '', 700);
+  });
+  modeBadge.textContent = 'assemble';
+}
+
+/* ---------- controls ---------- */
+reCutBtn.addEventListener('click', rebuild);
+assembleBtn.addEventListener('click', assemble);
+forensicChk.addEventListener('change', ()=> rack.classList.toggle('forensics', forensicChk.checked));
+densityInput.addEventListener('input', rebuild);
+
+let autoTick = null;
+autoChk.addEventListener('change', ()=>{
+  if(autoChk.checked){
+    autoTick = setInterval(()=> rebuild(), 3500);
+  } else { clearInterval(autoTick); autoTick = null; }
+});
+
+scanBtn.addEventListener('click', async ()=>{
+  scanBtn.disabled = true; scanBtn.textContent = 'Scanning…';
+  try{
+    const found = await smartScan();
+    if(found.length){ MANIFEST = found; renderManifest(); rebuild(); }
+    else { alert('No files found in assets/media/ using numbered names item1..item50.'); }
+  } finally {
+    scanBtn.disabled = false; scanBtn.textContent = 'Auto-scan';
+  }
+});
+
+/* ---------- boot ---------- */
+renderManifest();
+rebuild();
+</script>
+
+<!-- Site scripts -->
+<script defer src="assets/js/media.js"></script>
+<script defer src="assets/js/chaos.js"></script>
+
+<script>
+  const mergeWorkerBtn = document.getElementById('mergeWorker');
+  const mergeAllBtn = document.getElementById('mergeAll');
+  let mergeWorker;
+
+  // Floating Chop Box controls
+  const chopFloat = document.getElementById('chopFloat');
+  const chopHead = chopFloat.querySelector('.chop-head');
+  const chopResize = document.getElementById('chopResize');
+  const toggleChopBtn = document.getElementById('toggleChopBox');
+  const closeChopBtn = document.getElementById('closeChop');
+
+  function showChopBox(){ chopFloat.classList.remove('chop-hidden'); }
+  function hideChopBox(){ chopFloat.classList.add('chop-hidden'); }
+
+  toggleChopBtn.addEventListener('click', showChopBox);
+  closeChopBtn.addEventListener('click', hideChopBox);
+
+  // Drag by header
+  (function(){
+    let dragging=false, sx=0, sy=0, startLeft=0, startTop=0;
+    chopHead.addEventListener('pointerdown', e=>{
+      dragging=true; chopHead.setPointerCapture(e.pointerId);
+      const r = chopFloat.getBoundingClientRect();
+      sx = e.clientX; sy = e.clientY; startLeft = r.left; startTop = r.top;
+    });
+    chopHead.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      chopFloat.style.left = (startLeft + dx) + 'px';
+      chopFloat.style.top  = (startTop + dy) + 'px';
+      chopFloat.style.right = 'auto'; chopFloat.style.bottom = 'auto';
+    });
+    chopHead.addEventListener('pointerup', ()=> dragging=false);
+  })();
+
+  // Resize from corner
+  ;(function(){
+    let resizing=false, sx=0, sy=0, sw=0, sh=0;
+    chopResize.addEventListener('pointerdown', e=>{
+      resizing=true; chopResize.setPointerCapture(e.pointerId);
+      const r = chopFloat.getBoundingClientRect();
+      sx = e.clientX; sy = e.clientY; sw = r.width; sh = r.height;
+    });
+    chopResize.addEventListener('pointermove', e=>{
+      if(!resizing) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      chopFloat.style.width  = Math.max(260, sw + dx) + 'px';
+      chopFloat.style.height = Math.max(260, sh + dy) + 'px';
+    });
+    chopResize.addEventListener('pointerup', ()=> resizing=false);
+  })();
+
+  async function collectLayers(stageEl) {
+    const stageRect = stageEl.getBoundingClientRect();
+    const slices = [...stageEl.querySelectorAll('.slice')];
+    const layers = [];
+
+    for (const sl of slices) {
+      const media = sl.querySelector('img,video,canvas');
+      if (!media) continue;
+
+      const r = sl.getBoundingClientRect();
+      const x = r.left - stageRect.left;
+      const y = r.top  - stageRect.top;
+      const w = r.width;
+      const h = r.height;
+
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(media);
+      } catch {
+        const c = document.createElement('canvas'); c.width = Math.max(2, w|0); c.height = Math.max(2, h|0);
+        const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0,0,c.width,c.height);
+        bitmap = await createImageBitmap(c);
+      }
+
+      let poly = null;
+      const clip = sl.querySelector('.clipbox');
+      if (clip) {
+        const style = getComputedStyle(clip);
+        const cp = style.clipPath || style.webkitClipPath || "";
+        const m = cp.match(/polygon\((.+)\)/i);
+        if (m) {
+          const pts = m[1].split(/\s*,\s*/).map(p => p.trim());
+          poly = [];
+          for (const p of pts) {
+            const [px, py] = p.split(/\s+/);
+            const toPx = (val, axis) => {
+              const isPct = /%$/.test(val);
+              const num = parseFloat(val);
+              if (axis === 'x') return isPct ? x + (num / 100) * w : x + num;
+              return isPct ? y + (num / 100) * h : y + num;
+            };
+            poly.push(toPx(px, 'x'), toPx(py, 'y'));
+          }
+        }
+      }
+
+      layers.push({
+        bitmap,
+        x, y, w, h,
+        filter: getComputedStyle(media).filter || 'none',
+        op: getComputedStyle(sl).mixBlendMode || 'source-over',
+        poly
+      });
+    }
+    return { width: stageRect.width, height: stageRect.height, layers };
+  }
+
+  async function collectAllSpecimens() {
+    const stages = [...document.querySelectorAll('.specimen .stage')];
+    if (!stages.length) return null;
+
+    // Use the first stage width for consistency; height is sum of all
+    const rects = stages.map(s => s.getBoundingClientRect());
+    const width = Math.max(...rects.map(r => r.width));
+    const heights = rects.map(r => r.height);
+    const totalHeight = heights.reduce((a,b)=>a+b,0);
+
+    let offsetY = 0;
+    const allLayers = [];
+    for (let i = 0; i < stages.length; i++) {
+      const { layers } = await collectLayers(stages[i]);
+      // Rebase layer coordinates by adding offsetY
+      for (const L of layers) {
+        allLayers.push({
+          bitmap: L.bitmap,
+          x: L.x,
+          y: L.y + offsetY,
+          w: L.w,
+          h: L.h,
+          filter: L.filter,
+          op: L.op,
+          poly: L.poly ? L.poly.map((v, idx) => idx % 2 === 1 ? v + offsetY : v) : null
+        });
+      }
+      offsetY += heights[i];
+    }
+    return { width, height: totalHeight, layers: allLayers };
+  }
+
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  mergeWorkerBtn.addEventListener('click', async () => {
+    const firstSpecimen = document.querySelector('.specimen .stage');
+    if (!firstSpecimen) { alert('Nothing to merge.'); return; }
+
+    const { width, height, layers } = await collectLayers(firstSpecimen);
+    if (!mergeWorker) mergeWorker = new Worker('assets/js/chop-merge-worker.js');
+
+    mergeWorker.onmessage = (e) => {
+      const { ok, blob } = e.data || {};
+      if (!ok) return alert('Merge failed.');
+      downloadBlob(blob, 'chopshop_composite.png');
+    };
+
+    mergeWorker.postMessage({ width, height, layers, scale: 1, type: 'image/png' });
+  });
+
+  mergeAllBtn.addEventListener('click', async () => {
+    const pack = await collectAllSpecimens();
+    if (!pack) { alert('Nothing to merge.'); return; }
+    const { width, height, layers } = pack;
+    if (!mergeWorker) mergeWorker = new Worker('assets/js/chop-merge-worker.js');
+
+    mergeWorker.onmessage = (e) => {
+      const { ok, blob } = e.data || {};
+      if (!ok) return alert('Merge failed.');
+      downloadBlob(blob, 'chopshop_merged_all.png');
+    };
+
+    mergeWorker.postMessage({ width, height, layers, scale: 1, type: 'image/png' });
+  });
+
+  const mergeCanvasBtn = document.getElementById('mergeCanvas');
+  mergeCanvasBtn.addEventListener('click', async () => {
+    const canvasStage = document.getElementById('canvasStage');
+    if (!canvasStage || !canvasStage.querySelector('.slice')) { alert('Canvas is empty. Drag slices onto it first.'); return; }
+    const { width, height, layers } = await collectLayers(canvasStage);
+    if (!mergeWorker) mergeWorker = new Worker('assets/js/chop-merge-worker.js');
+    mergeWorker.onmessage = (e) => {
+      const { ok, blob } = e.data || {};
+      if (!ok) return alert('Merge failed.');
+      downloadBlob(blob, 'chopshop_canvas.png');
+    };
+    mergeWorker.postMessage({ width, height, layers, scale: 1, type: 'image/png' });
+  });
+
+  const clearBtn = document.getElementById('clearCanvas');
+  clearBtn.addEventListener('click', () => {
+    const canvasStage = document.getElementById('canvasStage');
+    canvasStage.innerHTML = '';
+  });
+    
+</script>
+<script src="assets/js/notavirus.js"></script>
+<!-- worker is referenced by your merge code elsewhere -->
+<script defer src="assets/js/chop-merge-worker.js" type="text/worker-placeholder"></script>
+<!-- your existing helpers -->
+<script defer src="assets/js/media.js"></script>
+<script defer src="assets/js/chaos.js"></script>
+<!-- new drag logic -->
+<script defer src="assets/js/chop.js"></script>
+</body>
+</html>

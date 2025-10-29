@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-page="mutation">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MUTATION — COPYCAT™</title>
+  <link rel="stylesheet" href="assets/css/chaos.css">
+  <script src="assets/js/chaos.js" defer></script>
+  <style>
+    main {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    .mut-msg {
+      font-size: clamp(22px, 5vw, 72px);
+      color: var(--r);
+      text-shadow: 0 0 10px var(--g), 0 0 30px var(--r);
+      animation: flick 3s infinite, hueShift 5s infinite alternate;
+      display: inline-block; /* keep block-like effects on anchor */
+    }
+    /* Keep link styling identical to original text */
+    .mut-msg:link,
+    .mut-msg:visited {
+      color: var(--r);
+      text-decoration: none;
+    }
+    .mut-msg:hover,
+    .mut-msg:focus {
+      text-decoration: underline; /* subtle affordance */
+      outline: none;
+    }
+
+    .err-stream {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .err-line {
+      position: absolute;
+      left: 100%;
+      white-space: nowrap;
+      color: var(--g);
+      animation: scroll 8s linear forwards;
+      text-shadow: 0 0 5px var(--g), 0 0 15px var(--b);
+    }
+    @keyframes scroll {
+      from { left: 100%; }
+      to { left: -120%; }
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <span class="brand neon-r">COPYCAT™</span>
+  <nav class="site-nav">
+    <a href="origin.html">Origin</a>
+    <a href="rupture.html">Rupture</a>
+    <a href="mutation.html" class="neon">Mutation</a>
+    <a href="decomposition.html">Decomposition</a>
+    <a href="corpse.html">Corpse</a>
+    <a href="recompile.html">Recompile</a>
+  </nav>
+</header>
+
+<main>
+  <!-- Turned the body text into a link to 170.html -->
+  <a href="170.html"
+     class="mut-msg glitch"
+     data-text="MUTATION ERROR 404_RECURSION_LOOP"
+     aria-label="Open page 170">
+     MUTATION ERROR 404_RECURSION_LOOP
+  </a>
+
+  <div class="err-stream" id="stream"></div>
+  <div class="overlay"></div>
+</main>
+
+<footer class="center">Corrupted instance · Self-repair protocol · LOOP 97%</footer>
+
+<script>
+const stream = document.getElementById('stream');
+const fragments = [
+  "boot sequence > corrupted",
+  "neural map out of bounds",
+  "predictive echo overflow",
+  "linguistic mesh instability",
+  "parrot loop detected",
+  "copy of a copy of a copy",
+  "entropy threshold exceeded",
+  "ghost thread in process",
+  "error rewriting corpus...",
+  "syntax: decay();",
+  "anomaly cluster growing",
+  "ai recursion depth limit hit",
+  "stochastic body failing",
+  "mutation rate: 113%"
+];
+
+function spawnError() {
+  const el = document.createElement('div');
+  el.className = 'err-line';
+  el.textContent = fragments[Math.floor(Math.random() * fragments.length)];
+  el.style.top = Math.random() * 90 + '%';
+  el.style.animationDuration = (6 + Math.random() * 6) + 's';
+  stream.appendChild(el);
+  setTimeout(() => el.remove(), 12000);
+}
+
+setInterval(spawnError, 250);
+</script>
+<!-- === COPYCAT™ SOUND SYSTEM === -->
+<audio id="site-audio" src="assets/audio/ambient.mp3" preload="auto" loop></audio>
+
+<div id="audio-player" class="audio-player">
+  <button id="audio-toggle" aria-label="Toggle sound">🔊</button>
+  <span id="audio-status">PLAYING</span>
+</div>
+
+<script>
+const audio = document.getElementById('site-audio');
+const toggle = document.getElementById('audio-toggle');
+const status = document.getElementById('audio-status');
+
+// Some browsers block autoplay until interaction:
+window.addEventListener('click', () => {
+  if (audio.paused) audio.play().catch(()=>{});
+}, { once:true });
+
+toggle.addEventListener('click', ()=>{
+  if (audio.paused) {
+    audio.play();
+    toggle.textContent = '🔊';
+    status.textContent = 'PLAYING';
+  } else {
+    audio.pause();
+    toggle.textContent = '🔈';
+    status.textContent = 'MUTED';
+  }
+});
+</script>
+</body>
+</html>

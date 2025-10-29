@@ -1,0 +1,155 @@
+/* ================================
+   FILE: assets/css/chaos.css
+   Section: Neon + Modes (cleaned)
+   ================================ */
+
+:root{
+  --ink:#0f0; --bg:#000; --mut:#7a7a7a; --line:#262626;
+  --r:#ff004d; --g:#00ffcc; --b:#7a00ff;
+
+  /* Neon system */
+  --neon-r:#ff004d; --neon-g:#00ffcc; --neon-b:#7a00ff;
+  --neon-ink:#eaffff;
+
+  /* Party/Perf scalars */
+  --party-mult: 1;
+  --party-speed: 1;
+  --party-hue: 0deg;
+}
+
+/* Base buttons/links (keep your existing look) */
+.btn, .site-nav a{
+  position: relative;
+  isolation: isolate;
+  background:#030303;
+  color: var(--ink);
+  border:1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  transition: box-shadow .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
+  text-shadow: none;
+  will-change: box-shadow, transform;
+  overflow: hidden;
+}
+
+/* Neon base + color variants */
+.neon { --neon: var(--neon-g); }
+.neon-r { --neon: var(--neon-r); }
+.neon-g { --neon: var(--neon-g); }
+.neon-b { --neon: var(--neon-b); }
+
+/* Soft outer ring baseline */
+.neon::after{
+  content:"";
+  position:absolute; inset:-1px; border-radius:inherit; pointer-events:none; z-index:-1;
+  /* Fallback if color-mix unsupported: duplicated RGBA ring below */
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--neon) 45%, transparent),
+    0 0 12px 0 color-mix(in oklab, var(--neon) 30%, transparent),
+    0 0 0 1px rgba(0,255,204,.25);
+  opacity:.55;
+}
+
+/* Hover/Focus glow */
+.neon:hover, .neon:focus-visible{
+  border-color: color-mix(in oklab, var(--neon) 60%, var(--line));
+  box-shadow:
+    0 0 6px 0 color-mix(in oklab, var(--neon) 60%, transparent),
+    0 0 18px 2px color-mix(in oklab, var(--neon) 45%, transparent),
+    0 0 36px 6px color-mix(in oklab, var(--neon) 30%, transparent),
+    0 0 18px 2px rgba(0,255,204,.2);
+  color: var(--neon-ink);
+  transform: translateY(-1px);
+}
+
+/* Sweep highlight */
+.neon::before{
+  content:"";
+  position:absolute;
+  top:-120%; left:-20%;
+  width:40%; height:340%;
+  transform: rotate(18deg);
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--neon) 60%, #fff) 45%, transparent 55%);
+  opacity:0; pointer-events:none; filter: blur(6px);
+}
+@media (prefers-reduced-motion: no-preference){
+  .neon:hover::before, .neon:focus-visible::before { animation: neonSweep .7s ease-out; }
+}
+@keyframes neonSweep{
+  0%{ left:-25%; opacity:0; }
+  10%{ opacity:.45; }
+  100%{ left:125%; opacity:0; }
+}
+
+/* Random “lit” pulse (JS toggles .lit) */
+@media (prefers-reduced-motion: no-preference){
+  .neon.lit{
+    color: var(--neon-ink);
+    border-color: color-mix(in oklab, var(--neon) 70%, var(--line));
+    box-shadow:
+      0 0 8px 0 color-mix(in oklab, var(--neon) 70%, transparent),
+      0 0 20px 2px color-mix(in oklab, var(--neon) 55%, transparent),
+      0 0 44px 10px color-mix(in oklab, var(--neon) 35%, transparent);
+    animation: neonPulse .9s ease-in-out alternate 2;
+  }
+  @keyframes neonPulse{
+    0%{ transform: translateY(0) scale(1); filter: saturate(1); }
+    100%{ transform: translateY(-1px) scale(1.03); filter: saturate(1.2); }
+  }
+}
+
+/* Party mode: stronger glow + pulsing aura + temporary page hue override */
+.party-on { --party-mult: 1.8; --party-speed: 1.6; }
+.party-bg { filter: hue-rotate(var(--party-hue)); }
+
+.neon, .site-nav a.neon{ transition: box-shadow .18s ease, color .18s ease, border-color .18s ease, transform .18s ease; }
+.neon.lit, .party-on .neon:hover, .party-on .neon:focus-visible{
+  box-shadow:
+    0 0 calc(10px * var(--party-mult)) color-mix(in oklab, var(--neon) 70%, transparent),
+    0 0 calc(26px * var(--party-mult)) color-mix(in oklab, var(--neon) 55%, transparent),
+    0 0 calc(60px * var(--party-mult)) color-mix(in oklab, var(--neon) 40%, transparent);
+}
+@media (prefers-reduced-motion: no-preference){
+  .party-on .neon::after{
+    animation: neonAura calc(1.8s / var(--party-speed)) ease-in-out infinite;
+  }
+  @keyframes neonAura{
+    0%{
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--neon) 60%, transparent),
+        0 0 12px 0 color-mix(in oklab, var(--neon) 45%, transparent);
+    }
+    100%{
+      box-shadow:
+        0 0 0 2px color-mix(in oklab, var(--neon) 70%, transparent),
+        0 0 22px 4px color-mix(in oklab, var(--neon) 55%, transparent);
+    }
+  }
+  /* Confetti spark on lit; disabled in perf-on */
+  .neon.lit::before{
+    content:"";
+    position:absolute; inset:-10%; border-radius:inherit; pointer-events:none;
+    background:
+      radial-gradient(6px 6px at 20% 40%, color-mix(in oklab, var(--neon) 80%, #fff) 70%, transparent 71%),
+      radial-gradient(5px 5px at 70% 60%, color-mix(in oklab, var(--neon) 70%, #fff) 70%, transparent 71%),
+      radial-gradient(4px 4px at 40% 80%, color-mix(in oklab, var(--neon) 70%, #fff) 70%, transparent 71%);
+    filter: blur(0.6px);
+    opacity: 0;
+    animation: confetti .9s ease-out forwards;
+  }
+  @keyframes confetti{
+    0%{ opacity:0; transform: translateY(0) }
+    30%{ opacity:.9; transform: translateY(-2px) }
+    100%{ opacity:0; transform: translateY(2px) }
+  }
+}
+
+/* Performance mode: damp it down for weak GPUs */
+.perf-on { --party-mult: .7; --party-speed: .8; }
+.perf-on .neon::after{ animation: none !important; }
+.perf-on .neon.lit{
+  box-shadow:
+    0 0 6px 0 color-mix(in oklab, var(--neon) 50%, transparent),
+    0 0 14px 1px color-mix(in oklab, var(--neon) 35%, transparent);
+}
+.perf-on .neon.lit::before{ display:none; }

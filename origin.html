@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ORIGIN — COPYCAT™</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="assets/css/chaos.css" rel="stylesheet" />
+  <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    html,body{
+      margin:0; padding:0;
+      font-family:'Share Tech Mono', monospace;
+      background:#000;
+      color:#0f0;
+      overflow:hidden;
+      animation:fadeIn 2s ease forwards;
+    }
+
+    a{color:#0f0;text-decoration:none;}
+    header,footer{
+      position:relative;
+      background:#000;
+      color:#0f0;
+      text-align:center;
+      padding:10px 0;
+      z-index:10;
+    }
+
+    header .brand{font-size:1.2rem;letter-spacing:2px;}
+    nav a{margin:0 10px;font-size:0.85rem;opacity:0.85;transition:.2s;}
+    nav a:hover{opacity:1;color:#fff;}
+
+    main{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:calc(100vh - 120px);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .message{
+      text-align:center;
+      max-width:600px;
+      line-height:1.4;
+      font-size:1.1rem;
+      z-index:2;
+      position:relative;
+      background:rgba(0,0,0,0.5);
+      padding:2rem;
+      border-radius:10px;
+      box-shadow:0 0 12px rgba(0,255,0,0.2);
+    }
+
+    .glitch{
+      font-size:2rem;
+      letter-spacing:4px;
+      color:#0f0;
+      text-shadow:0 0 3px #0f0,0 0 8px #0f0;
+      animation:glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow{
+      0%{text-shadow:0 0 3px #0f0;}
+      100%{text-shadow:0 0 10px #0f0;}
+    }
+
+    .static{
+      position:absolute;inset:0;
+      background:repeating-linear-gradient(0deg,rgba(0,0,0,0.05) 0px,rgba(255,255,255,0.05) 2px);
+      mix-blend-mode:multiply;
+      animation:staticShift 1s steps(4,end) infinite;
+      opacity:.3;
+      z-index:1;
+    }
+
+    @keyframes staticShift{0%{background-position:0 0;}100%{background-position:0 4px;}}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    footer{font-size:0.75rem;letter-spacing:1px;}
+
+    /* background autopsy */
+    #bgframe{
+      position:fixed;
+      inset:0;
+      width:100vw;height:100vh;
+      border:none;
+      z-index:-1;
+      opacity:0.3;
+      pointer-events:none;
+      filter:contrast(130%) brightness(0.8) saturate(120%) blur(1px);
+      animation:fadeIn 2s ease-out forwards;
+    }
+  </style>
+  <link rel="stylesheet" href="assets/css/chaos.css" />
+</head>
+
+<body>
+    <!-- === COPYCAT™ SOUND SYSTEM === -->
+    <audio id="site-audio" src="assets/media/dead.mp3" preload="auto" loop></audio>
+
+    <div id="audio-player" class="audio-player">
+      <button id="audio-toggle" aria-label="Toggle sound">🔊</button>
+      <span id="audio-status">PLAYING</span>
+    </div>
+
+    <script>
+    const audio = document.getElementById('site-audio');
+    const toggle = document.getElementById('audio-toggle');
+    const status = document.getElementById('audio-status');
+
+    // Some browsers block autoplay until interaction:
+    window.addEventListener('click', () => {
+      if (audio.paused) audio.play().catch(()=>{});
+    }, { once:true });
+
+    toggle.addEventListener('click', ()=>{
+      if (audio.paused) {
+        audio.play();
+        toggle.textContent = '🔊';
+        status.textContent = 'PLAYING';
+      } else {
+        audio.pause();
+        toggle.textContent = '🔈';
+        status.textContent = 'MUTED';
+      }
+    });
+    </script>
+  <!-- Background Autopsy Scene -->
+  <iframe src="dead-internet-autopsy.html" id="bgframe"></iframe>
+
+  <header class="site-header">
+    <a class="brand" href="origin.html">COPYCAT™</a>
+    <nav class="site-nav">
+      <a href="origin.html">Origin</a>
+      <a href="rupture.html">Rupture</a>
+      <a href="mutation.html">Mutation</a>
+      <a href="decomposition.html">Decomposition</a>
+      <a href="corpse.html">Corpse</a>
+      <a href="recompile.html">Recompile</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="message">
+      <h2 class="glitch">ORIGIN</h2>
+      <p>
+        Before the collapse, there was the hum of creation — the illusion of something <i>new</i>.
+        Machines learning to dream in borrowed language. Every pixel, an imitation of birth.
+      </p>
+      <p>
+        A web grown hollow. Engagement farms, comment mills, synthetic traffic.
+        Then the parrots arrived: large, loud, and certain.
+        They predict the next word, then the next, smooth as anesthesia.
+        Understanding never shows up; it wasn’t invited.
+      </p>
+    </div>
+    <div class="static"></div>
+  </main>
+
+  <footer class="site-footer">
+    <span class="mono">COPYCAT™ / Digital Genesis / 94% Confidence</span>
+  </footer>
+
+  <script src="assets/js/notavirus.js"></script>
+  <script src="assets/js/chaos.js"></script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>RUPTURE — COPYCAT™</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="assets/js/bots.js" defer></script>
+  <script type="application/json" src="assets/data/botfeed.json" id="botfeed-data"></script>
+  <link rel="stylesheet" href="assets/css/chaos.css" />
+
+  <style>
+   
+    }
+    nav a{margin:0 10px;color:#0f0;text-decoration:none;font-size:.85rem;opacity:.85;}
+    nav a:hover{opacity:1;color:#fff;}
+    main{position:relative;width:100vw;height:100vh;overflow:hidden;}
+    canvas{position:absolute;top:0;left:0;width:100%;height:100%;background:#111;}
+    footer{font-size:.75rem;letter-spacing:1px;}
+    .overlay{
+      position:absolute;inset:0;
+      background:radial-gradient(circle at center,#ff000020 0%,transparent 70%);
+      z-index:5;
+    }
+
+    /* bot feed layer */
+    #botFeed {
+      position:absolute;
+      inset:0;
+      z-index:20;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column-reverse;
+      align-items:center;
+      justify-content:flex-end;
+      pointer-events:none;
+    }
+    #botFeed .card {
+      background:rgba(0,0,0,0.5);
+      color:#0f0;
+      margin:4px 0;
+      padding:8px 12px;
+      border-radius:6px;
+      width:300px;
+      text-align:left;
+      font-size:0.85rem;
+      animation:fadeIn 0.4s ease-out;
+    }
+
+    /* chaotic popups */
+    .popup{
+      position:fixed;
+      pointer-events:none;
+      font-size:1rem;
+      color:#f33;
+      mix-blend-mode:screen;
+      text-shadow:0 0 8px #f00,0 0 20px #f33;
+      animation:popupLife 8s cubic-bezier(.22,.61,.36,1) forwards;
+      transform-origin:center;
+      z-index:50;
+      user-select:none;
+    }
+    .popup img, .popup video{
+      width:200px;height:200px;object-fit:cover;border-radius:10px;
+      filter:contrast(1.3) brightness(1.2) saturate(1.4);
+      animation:glitch 0.25s steps(2,end) infinite alternate;
+      box-shadow:0 0 25px rgba(255,0,0,0.3);
+    }
+    @keyframes popupLife{
+      0%{opacity:0;transform:scale(.8) rotate(0deg);}
+      5%{opacity:1;}
+      40%{transform:scale(1.1) rotate(2deg);}
+      60%{transform:scale(.95) rotate(-2deg);}
+      80%{opacity:1;}
+      100%{opacity:0;transform:scale(1.3) rotate(5deg);}
+    }
+    @keyframes glitch{
+      0%{clip-path:inset(0 0 20% 0);}
+      50%{clip-path:inset(10% 0 10% 0);}
+      100%{clip-path:inset(60% 0 0 0);}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <a class="brand" href="origin.html">COPYCAT™</a>
+  <nav class="site-nav">
+    <a href="origin.html">Origin</a>
+    <a href="rupture.html">Rupture</a>
+    <a href="mutation.html">Mutation</a>
+    <a href="decomposition.html">Decomposition</a>
+    <a href="corpse.html">Corpse</a>
+    <a href="recompile.html">Recompile</a>
+  </nav>
+</header>
+
+<main>
+  <div id="botFeed"></div>
+  <canvas id="rupture"></canvas>
+  <div class="overlay"></div>
+</main>
+
+<footer><span class="mono">Signal overflow · art collapse · red noise</span></footer>
+
+<script>
+/* glitch burst animation background */
+const c = document.getElementById('rupture');
+const ctx = c.getContext('2d');
+let w = c.width = window.innerWidth;
+let h = c.height = window.innerHeight;
+let particles = [];
+
+class Particle {
+  constructor(x,y){
+    this.x = x; this.y = y;
+    this.vx = (Math.random()-0.5)*8;
+    this.vy = (Math.random()-0.5)*8;
+    this.life = 60+Math.random()*40;
+    this.color = `hsl(${Math.random()*30+350},100%,${Math.random()*60+40}%)`;
+  }
+  update(){ this.x+=this.vx; this.y+=this.vy; this.vx*=0.96; this.vy*=0.96; this.life--; }
+  draw(){ ctx.fillStyle=this.color; ctx.fillRect(this.x,this.y,3,3); }
+}
+function burst(){
+  const x=Math.random()*w,y=Math.random()*h;
+  for(let i=0;i<250;i++)particles.push(new Particle(x,y));
+}
+function animate(){
+  ctx.fillStyle='rgba(0,0,0,0.22)';
+  ctx.fillRect(0,0,w,h);
+  particles.forEach((p,i)=>{
+    p.update();p.draw();
+    if(p.life<=0)particles.splice(i,1);
+  });
+  if(Math.random()<0.06)burst();
+  requestAnimationFrame(animate);
+}
+animate();
+window.addEventListener('resize',()=>{w=c.width=innerWidth;h=c.height=innerHeight;});
+
+/* chaotic overlays */
+const emojis = ["🤖","💀","🧠","⚡","🕳️","🩸","👁️","📡","☠️","🧬","🔥"];
+const texts = [
+  "dead internet","AI slop","predictive ghost","copy of a copy",
+  "stochastic parrot","low-res god","content mulch","trained on silence",
+  "bot communion","loop recursion","digital meat"
+];
+
+/* Directly define your media from the folder */
+const media = [
+  "assets/media/items/10.jpg","assets/media/items/20.jpg","assets/media/items/30.gif",
+  "assets/media/items/40.mp4","assets/media/items/50.mp4","assets/media/items/60.mp4",
+  "assets/media/items/70.mp4","assets/media/items/80.jpg","assets/media/items/90.mp4",
+  "assets/media/items/100.mp4","assets/media/items/110.jpg","assets/media/items/120.jpg",
+  "assets/media/items/130.mp4","assets/media/items/140.jpg","assets/media/items/150.jpg",
+  "assets/media/items/160.jpg","assets/media/items/170.jpg","assets/media/items/180.gif",
+  "assets/media/items/190.gif","assets/media/items/200.jpg","assets/media/items/210.jpg",
+  "assets/media/items/220.jpg","assets/media/items/230.jpg","assets/media/items/240.jpg",
+  "assets/media/items/250.jpg","assets/media/items/260.jpg","assets/media/items/280.mp4",
+  "assets/media/items/290.mp4","assets/media/items/300.jpg","assets/media/items/310.mp4",
+  "assets/media/items/320.mp4","assets/media/items/330.mp4","assets/media/items/340.gif",
+  "assets/media/items/350.mp4","assets/media/items/360.jpg","assets/media/items/370.mp4",
+  "assets/media/items/380.mp4"
+];
+
+function spawnPopup(){
+  const el = document.createElement('div');
+  el.className = 'popup';
+  const type = Math.random();
+
+  if(type < 0.3){
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.fontSize = Math.random()*3+2+"rem";
+  } else if(type < 0.5){
+    el.textContent = texts[Math.floor(Math.random()*texts.length)];
+    el.style.fontSize = Math.random()*1.2+1+"rem";
+  } else {
+    const file = media[Math.floor(Math.random()*media.length)];
+    if(file.endsWith(".mp4")){
+      const vid = document.createElement('video');
+      vid.src = file;
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = true;
+      el.appendChild(vid);
+    } else {
+      const img = document.createElement('img');
+      img.src = file;
+      el.appendChild(img);
+    }
+  }
+
+  el.style.left = Math.random()*(window.innerWidth-300)+"px";
+  el.style.top = Math.random()*(window.innerHeight-300)+"px";
+  el.style.transform = `rotate(${Math.random()*30-15}deg)`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),8000);
+}
+
+/* faster chaos */
+setInterval(spawnPopup,200);
+</script>
+<!-- === COPYCAT™ SOUND SYSTEM === -->
+<audio id="site-audio" src="assets/audio/ambient.mp3" preload="auto" loop></audio>
+
+<div id="audio-player" class="audio-player">
+  <button id="audio-toggle" aria-label="Toggle sound">🔊</button>
+  <span id="audio-status">PLAYING</span>
+</div>
+
+<script>
+const audio = document.getElementById('site-audio');
+const toggle = document.getElementById('audio-toggle');
+const status = document.getElementById('audio-status');
+
+// Some browsers block autoplay until interaction:
+window.addEventListener('click', () => {
+  if (audio.paused) audio.play().catch(()=>{});
+}, { once:true });
+
+toggle.addEventListener('click', ()=>{
+  if (audio.paused) {
+    audio.play();
+    toggle.textContent = '🔊';
+    status.textContent = 'PLAYING';
+  } else {
+    audio.pause();
+    toggle.textContent = '🔈';
+    status.textContent = 'MUTED';
+  }
+});
+</script>
+</body>
+</html>
